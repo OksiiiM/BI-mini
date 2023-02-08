@@ -1,0 +1,34 @@
+# in the schema create three tables "actors", "newcrew" and "movie" using this queries:
+
+CREATE TABLE "BI mini".actors (
+	nconst varchar(15550) NOT NULL,
+	primaryname varchar(15550) NULL,
+	birthyear varchar(15550) NULL,
+	deathyear varchar(15550) NULL,
+	primaryprofession varchar(256) NULL,
+	knownfortitles varchar(256) NULL,
+	CONSTRAINT actors_pk PRIMARY KEY (nconst)
+);
+
+CREATE TABLE "BI mini".newcrew (
+	tconst varchar(15550) NOT NULL,
+	directors varchar(15550) NULL,
+	writers varchar(15550) NULL,
+	CONSTRAINT newcrew_pk PRIMARY KEY (tconst)
+);
+
+CREATE TABLE "BI mini".movie (
+	titleid varchar(50) NULL,
+	"ordering" int4 NULL,
+	title varchar(64) NULL,
+	region varchar(50) NULL,
+	"language" varchar(50) NULL,
+	"types" varchar(50) NULL,
+	"attributes" varchar(50) NULL,
+	isoriginaltitle bool NULL
+);
+
+# create connections as in the start schema defined before
+# connect actors.nconst with newcrew.directors
+# connect newcrew.tconst with movie.titleis
+# connect newcrew.tconst with actors.knownfortitles
