@@ -1,0 +1,57 @@
+# extract data
+# after extracting the data you will get three files in .tsv format  
+# fiels will include data on movies, actors and crew respectively
+
+# the first step is to clean it and transform to .csv format 
+# the data didn't deploy to OpenRefine so you can clean it with Phyton
+
+# to clean data that contains information about the actors and transform it into .csv write next:
+import pandas as pd
+df = pd.read_csv("data-2.tsv", delimiter='\t')
+df = df.join(df.pop('primaryProfession').str.split(',', expand=True).stack().reset_index(level=1, drop=True).rename('primaryProfession'))
+df = df.join(df.pop('knownForTitles').str.split(',', expand=True).stack().reset_index(level=1, drop=True).rename('knownForTitles'))
+df = df.fillna(value=0)
+df = df.drop_duplicates()
+df.drop(df[df["birthYear"] == "\\N"].index, inplace=True)
+df.drop(df[df["deathYear"] == "\\N"].index, inplace=True)
+df.drop(df[df["primaryProfession"] == "0"].index, inplace=True)
+df.drop(df[df["knownForTitles"] == "\\N"].index, inplace=True)
+grouped = df.groupby('nconst').agg({'primaryName': 'first',
+                                     'birthYear': 'first',
+                                     'deathYear': 'first',
+                                     'primaryProfession': ', '.join,
+                                     'knownForTitles': ', '.join})
+
+grouped.reset_index(inplace=True)
+grouped.to_csv('actors.csv', index=False)
+
+
+
+# to clean and transform the crew data follow next steps:
+import pandas as pd
+df = pd.read_csv("data-Copy1.tsv", delimiter="\t")
+df = df.drop_duplicates()
+df["directors"].fillna("unknown", inplace=True)
+df["writers"].fillna("unknown", inplace=True)
+df = df[df["tconst"].notna()]
+df.drop(df[df["directors"] == "\\N"].index, inplace=True)
+df.drop(df[df["writers"] == "\\N"].index, inplace=True)
+grouped = df.groupby('tconst').agg({ 'directors': ', '.join,
+                                     'writers': ', '.join})
+df.to_csv("NewCrew.csv", index=False)
+
+
+# to clean and transform movie data write next:
+import pandas as pd
+df = pd.read_table("data-3.tsv", low_memory=False)
+df=df.infer_objects()
+df = df.drop_duplicates()
+df["ordering"].fillna(0, inplace=True)
+df["language"].fillna("unknown", inplace=True)
+df = df[df["title"].notna()]
+df = df[df["isOriginalTitle"].notna()]
+df["isOriginalTitle"] = df["isOriginalTitle"] == 1
+df = df[["titleId", "ordering", "title", "region", "language", "types", "attributes", "isOriginalTitle"]]
+df.to_csv("movie.csv", index=False)
+
+# export cleaned data to your laptop
