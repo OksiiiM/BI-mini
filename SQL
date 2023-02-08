@@ -1,0 +1,94 @@
+/*show all 10 oldest actors of the last decade*/
+select primaryname, birthyear, deathyear   
+from actors 
+where  deathyear > '2010' and deathyear <'2020' and birthyear not ilike '%n%'
+order by  birthyear asc 
+limit 10;
+
+/*show top 10 actors*/
+select primaryname, count(knownfortitles) as roles_played
+from actors, unnest(string_to_array(knownfortitles, ',')) as t
+group by primaryname
+order by roles_played desc
+limit 10;
+
+/*who cooperated with other actors the most?*/
+with cooperation as (
+select primaryname, unnest(string_to_array(knownfortitles, ',')) as titleid 
+from  actors
+)
+select primaryname, count(*) as count
+from cooperation
+join movie on movie.titleid = cooperation.titleid
+group by primaryname 
+order by count desc 
+limit 10;
+
+/*who cooperated with other crew the most?*/
+with actors_crew as (
+select tconst,unnest(string_to_array(directors, ',')) as director,unnest(string_to_array(writers, ',')) as writer
+from newcrew
+),
+actor_counts as (
+select actors.nconst, actors.primaryname, count(*) as count
+from actors
+join (select tconst, director as crew from actors_crew
+union
+select tconst, writer as crew from actors_crew) crew_combined
+on actors.nconst = crew_combined.crew
+join movie on crew_combined.tconst = movie.titleid
+group by actors.nconst, actors.primaryname
+)
+select primaryname, count
+from actor_counts
+order by count desc
+limit 10;
+
+/*10 top most movies with the most translations to other languages?*/
+select titleid,  count (titleid) as translation
+from movie 
+group by  titleid
+order by translation desc 
+limit 10; 
+
+
+/*15 most popular languages for the movie titles?*/
+select language, count (language) as translated_movies
+from movie
+where language not ilike '%n%'
+group by language
+order by translated_movies desc limit 15;
+
+/* data accuracy. how clean is the transported data*/
+select *
+from "bi mini".actors
+where birthyear  is null;
+
+/*what is the distribution of different alternative title types*/
+select types, count(titleid) as count
+from "bi mini".movie
+where "types"  not ilike '%n%'
+group by types
+order by count desc;
+
+/*language of title ration*/
+with total_count as (
+select count(titleid) as total
+from "bi mini".movie
+)
+select language, count(titleid), count(titleid)::float/total as ratio
+from "bi mini".movie, total_count
+where language not ilike '%n%'
+group by language, total
+order by ratio desc;
+
+/*actors who are most successful in other that english movies (more movies -> most successful)*/
+with actors_count as (
+select primaryname, count(titleid) as count
+from "bi mini".actors a, "bi mini".movie m
+where a.knownfortitles = m.titleid  and language != 'english'
+group by primaryname
+)
+select primaryname, count
+from actors_count
+order by count desc;
